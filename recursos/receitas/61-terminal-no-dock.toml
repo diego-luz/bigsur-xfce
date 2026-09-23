@@ -1,0 +1,70 @@
+[modulo]
+id = "61"
+nome = "terminal-no-dock"
+titulo = "Novo terminal no clique direito"
+afetada_por = ["dock"]
+
+# O clique direito do dock (e do menu) mostra as Actions do .desktop, e o do
+# xfce4-terminal so traz Preferencias. A copia em ~/.local/share/applications
+# vale no lugar da do sistema e ganha nova janela e nova aba.
+[[passo]]
+tipo = "script"
+dizer = "pondo nova janela e nova aba no clique direito do terminal"
+tolera_falha = true
+corpo = '''
+origem=/usr/share/applications/xfce4-terminal.desktop
+[ -f "$origem" ] || { echo "xfce4-terminal nao instalado"; exit 0; }
+dest="$HOME/.local/share/applications/xfce4-terminal.desktop"
+d3_pasta "$HOME/.local/share/applications"
+d3_antes "$dest"
+mkdir -p "${dest%/*}"
+# so a secao principal; as acoes sao escritas abaixo
+sed -n '/^\[Desktop Entry\]/,/^\[Desktop Action/{/^\[Desktop Action/d;/^Actions=/d;p}' "$origem" > "$dest"
+cat >> "$dest" <<'EOF'
+Actions=new-window;new-tab;preferences;
+
+[Desktop Action new-window]
+Name=New Window
+Name[pt_BR]=Nova janela
+Name[pt]=Nova janela
+Exec=xfce4-terminal --window
+
+[Desktop Action new-tab]
+Name=New Tab
+Name[pt_BR]=Nova aba
+Name[pt]=Nova aba
+Exec=xfce4-terminal --tab
+
+[Desktop Action preferences]
+Name=Terminal Preferences
+Name[pt_BR]=Preferencias do terminal
+Name[pt]=Preferencias do terminal
+Exec=xfce4-terminal --preferences
+EOF
+update-desktop-database "${dest%/*}" 2>/dev/null || true
+echo "acoes do terminal: nova janela, nova aba, preferencias"
+'''
+
+# o plank guarda o caminho do .desktop no item; o 60 aponta para o do sistema
+[[passo]]
+tipo = "script"
+se = "dock == sim"
+tolera_falha = true
+corpo = '''
+local_="$HOME/.local/share/applications/xfce4-terminal.desktop"
+[ -f "$local_" ] || exit 0
+mudou=0
+for item in "$HOME"/.config/plank/*/launchers/*.dockitem "$HOME"/.config/plank/*/*.dockitem; do
+  [ -f "$item" ] || continue
+  grep -q '^Launcher=file:///usr/share/applications/xfce4-terminal.desktop$' "$item" || continue
+  d3_antes "$item"
+  sed -i "s|^Launcher=file:///usr/share/applications/xfce4-terminal.desktop\$|Launcher=file://$local_|" "$item"
+  mudou=1
+done
+if [ "$mudou" = 1 ] && pgrep -x plank >/dev/null; then
+  pkill -x plank
+  sleep 0.5
+  setsid plank >/dev/null 2>&1 < /dev/null &
+fi
+echo "dock usando o terminal com as acoes novas"
+'''
