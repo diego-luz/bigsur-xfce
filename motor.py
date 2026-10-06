@@ -109,7 +109,7 @@ def montar_contexto(cfg: dict[str, str]) -> dict[str, str]:
         "logo_arquivo": str(Path.home() / ".local/share/icons/d3bian-init" / arquivo_logo),
         "painel_fundo": "0.11 0.11 0.13 0.55" if escuro else "0.97 0.97 0.99 0.72",
         "painel_texto": "#f2f2f7" if escuro else "#1d1d1f",
-        "fonte_ui": "SF Pro Display" if cfg.get("fonte_interface") == "sf-pro" else "Inter",
+        "fonte_ui": "Inter",
         "fonte_mono": "Fira Code",
         "destaque_externo": destaque,
         "widget_cor": DESTAQUE_COR.get(cfg.get("destaque", "padrao"), DESTAQUE_COR["padrao"]),

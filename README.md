@@ -109,14 +109,10 @@ de parede do WhiteSur-wallpapers.
 XFCE, LightDM, light-locker, picom, Conky, Kvantum, o menu global e os demais
 pacotes vêm do repositório oficial do Debian.
 
-A opção de fonte SF Pro baixa um espelho público
-([San-Francisco-Pro-Fonts](https://github.com/sahibjotsaggu/San-Francisco-Pro-Fonts));
-a fonte pertence à Apple e tem licença própria.
-
 ## Aviso
 
 Projeto independente, sem relação com a Apple, o Debian ou a NBCUniversal.
-macOS, Big Sur e a logo da maçã são marcas da Apple Inc. Debian é marca da
+macOS e Big Sur são marcas da Apple Inc. Debian é marca da
 Software in the Public Interest, Inc. Mr. Robot e fsociety são marcas da
 NBCUniversal.
 

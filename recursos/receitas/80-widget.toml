@@ -2,7 +2,7 @@
 id = "80"
 nome = "widget"
 titulo = "Widget de relogio e status na area de trabalho"
-afetada_por = ["widget", "fonte_interface", "destaque"]
+afetada_por = ["widget", "destaque"]
 
 # widget: sim e o simples, aneis e o adaptado do MX-CoreBlue, nao desliga
 
