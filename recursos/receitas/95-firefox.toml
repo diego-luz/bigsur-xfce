@@ -7,7 +7,7 @@ requer = ["10"]
 [[passo]]
 tipo = "git"
 url = "https://github.com/vinceliuice/WhiteSur-firefox-theme.git"
-ref = "master"
+ref = "main"
 destino = "@@fontes@@/WhiteSur-firefox-theme"
 
 [[passo]]
@@ -21,14 +21,30 @@ for b in firefox-esr firefox; do command -v "$b" >/dev/null && navegador="$b" &&
 
 if ! ls "$HOME/.mozilla/firefox"/*default* >/dev/null 2>&1; then
   echo "criando o perfil padrao"
+  d3_antes "$HOME/.mozilla/firefox/profiles.ini"
+  perfis_antes="$(ls -d "$HOME/.mozilla/firefox"/*/ 2>/dev/null || true)"
   "$navegador" --headless --createprofile default-release >/dev/null 2>&1 || true
   sleep 2
+  for d in "$HOME/.mozilla/firefox"/*/; do
+    case "$perfis_antes" in *"$d"*) ;; *) d3_criado "${d%/}" ;; esac
+  done
 fi
 ls "$HOME/.mozilla/firefox"/*default* >/dev/null 2>&1 || {
   echo "nenhum perfil; abra o Firefox uma vez e rode esta etapa de novo"; exit 0; }
 
+# o instalador troca o chrome/ e apaga o user.js sem guardar
+for perfil in "$HOME/.mozilla/firefox"/*default*/; do
+  [ -d "$perfil" ] || continue
+  d3_antes "${perfil}chrome" "${perfil}user.js"
+done
 cd "$D3_FONTES/WhiteSur-firefox-theme"
-yes '' | bash ./install.sh -m 3+4 >/dev/null 2>&1 && echo "tema instalado" || echo "o instalador do tema falhou"
+# o instalador so le confirmacoes; com pipefail, o yes morto quando ele termina
+# faria a instalacao parecer falha, entao a saida que vale e a dele
+set +o pipefail
+yes '' | bash ./install.sh -m 3+4 >/dev/null 2>&1
+codigo=${PIPESTATUS[1]}
+set -o pipefail
+[ "$codigo" = 0 ] && echo "tema instalado" || echo "o instalador do tema falhou ($codigo)"
 echo "falta um passo manual, uma vez so:"
 echo "  em about:config, ligue toolkit.legacyUserProfileCustomizations.stylesheets"
 echo "  depois feche e abra o Firefox"

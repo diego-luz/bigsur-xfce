@@ -462,9 +462,7 @@ details.verif[open] > summary{border-bottom:1px solid var(--borda)}
   color:var(--fraco);font-size:12px;letter-spacing:.08em;opacity:.5;transition:opacity .3s;
   user-select:none}
 .amigo:hover{opacity:1}
-.amigo svg{width:28px;height:auto;flex-shrink:0;transition:filter .3s}
-.amigo:hover svg{filter:drop-shadow(0 0 8px rgba(255,77,94,.5))}
-/* largura da frase maior mais o cursor e o espacamento, para a mascara nao
+/* largura da frase maior mais o cursor e o espacamento, para o texto nao
    dancar enquanto digita ou troca de lingua */
 .amigo-texto{min-width:18ch;white-space:pre}
 .amigo-texto::after{content:"▌";color:var(--erro);animation:piscar 1.1s step-end infinite}
@@ -488,3 +486,10 @@ details.verif[open] > summary{border-bottom:1px solid var(--borda)}
 .hw-nota{color:var(--fraco);font-size:12px;margin:-4px 2px 9px}
 .hw .acoes{margin-top:14px}
 .item input:disabled{opacity:.4}
+
+/* --- aparencia: voltar ao que era antes, com a opcao de remover --------------- */
+.opcao-apagar{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;cursor:pointer;font-size:13px}
+.opcao-apagar input{margin:3px 0 0;flex-shrink:0;width:15px;height:15px;accent-color:var(--erro)}
+.opcao-apagar .dica{display:block;color:var(--fraco);font-size:12px;margin-top:2px;line-height:1.5}
+#listaApagar ul{margin:4px 0 8px}
+#listaApagar .dica{color:var(--fraco);font-size:12px;margin:6px 0 0}
