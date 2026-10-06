@@ -45,9 +45,19 @@ else
       echo "o plank-reloaded baixado nao confere com o esperado; nao foi instalado"
       rm -f "$deb"
     fi
-    if [ -s "$deb" ] && sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-         -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold "$deb" >/dev/null 2>&1; then
-      instalado plank-reloaded && pacote=plank-reloaded && d3_pacotes plank-reloaded
+    # o .deb esta numa pasta da pessoa: o root copia para uma pasta nova dele,
+    # confere o SHA-256 la e instala de la (trocar o arquivo depois da
+    # conferencia acima nao chega ao apt)
+    if [ -s "$deb" ] && [ ! -L "$deb" ]; then
+      r="$(sudo -n mktemp -d)"
+      if sudo -n cp --no-preserve=all -- "$deb" "$r/plank-reloaded.deb" \
+         && echo "$D3_PLANK_SHA256  $r/plank-reloaded.deb" | sudo -n sha256sum -c --quiet - >/dev/null 2>&1 \
+         && sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+              -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
+              "$r/plank-reloaded.deb" >/dev/null 2>&1; then
+        instalado plank-reloaded && pacote=plank-reloaded && d3_pacotes plank-reloaded
+      fi
+      sudo -n rm -rf -- "$r"
     fi
   fi
   if [ -z "$pacote" ]; then
