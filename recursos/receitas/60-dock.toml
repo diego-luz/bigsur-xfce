@@ -34,19 +34,27 @@ pacote=""
 if instalado plank-reloaded; then
   pacote=plank-reloaded
 else
-  api="$(curl -fsSL https://api.github.com/repos/zquestz/plank-reloaded/releases/latest || true)"
-  url="$(printf '%s' "$api" | grep -oE 'https://[^"]*debian[^"]*amd64\.deb' | sed -n 1p)"
-  if [ -n "$url" ]; then
+  # versao fixa e SHA-256 conferido antes de o apt instalar como root
+  # (motor.py, PLANK_VERSAO e PLANK_SHA256); sem hash para esta arquitetura,
+  # fica o plank do Debian
+  if [ -n "$D3_PLANK_SHA256" ]; then
+    url="https://github.com/zquestz/plank-reloaded/releases/download/$D3_PLANK_VERSAO/plank-reloaded-debian_${D3_PLANK_VERSAO}-1_$D3_PLANK_ARQUITETURA.deb"
     deb="$D3_FONTES/$(basename "$url")"
     [ -s "$deb" ] || curl -fsSL -o "$deb" "$url" || true
-    if [ -s "$deb" ] && sudo -n apt-get install -y "$deb" >/dev/null 2>&1; then
+    if [ -s "$deb" ] && ! echo "$D3_PLANK_SHA256  $deb" | sha256sum -c --quiet - >/dev/null 2>&1; then
+      echo "o plank-reloaded baixado nao confere com o esperado; nao foi instalado"
+      rm -f "$deb"
+    fi
+    if [ -s "$deb" ] && sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+         -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold "$deb" >/dev/null 2>&1; then
       instalado plank-reloaded && pacote=plank-reloaded && d3_pacotes plank-reloaded
     fi
   fi
   if [ -z "$pacote" ]; then
     echo "plank-reloaded indisponivel, usando o plank do Debian"
     if ! instalado plank; then
-      sudo -n apt-get install -y plank >/dev/null 2>&1 || true
+      sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold plank >/dev/null 2>&1 || true
       if instalado plank; then d3_pacotes plank; fi
     fi
     instalado plank && pacote=plank

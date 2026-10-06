@@ -4,10 +4,12 @@ nome = "firefox"
 titulo = "Tema WhiteSur no Firefox"
 requer = ["10"]
 
+# commit fixo (o main de 2026-10-06): o que roda e o que foi conferido. Para
+# atualizar: git ls-remote https://github.com/vinceliuice/WhiteSur-firefox-theme.git main
 [[passo]]
 tipo = "git"
 url = "https://github.com/vinceliuice/WhiteSur-firefox-theme.git"
-ref = "main"
+ref = "ecc6465e2d30278a0f76604e622e3df8ac08ae1c"
 destino = "@@fontes@@/WhiteSur-firefox-theme"
 
 [[passo]]
