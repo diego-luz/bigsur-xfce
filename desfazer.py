@@ -134,10 +134,22 @@ APAGAVEIS_FORA_DE_CASA = {
 }
 
 
+# o que o root pode devolver da copia de seguranca dele: os mesmos caminhos de
+# sistema que as receitas mexem (a pasta das copias em si nao)
+RESTAURAVEIS_FORA_DE_CASA = APAGAVEIS_FORA_DE_CASA - {str(caminhos.BACKUP_SISTEMA)}
+
+
 def _apagavel(caminho: Path) -> bool:
-    if caminho.is_relative_to(Path.home()):
-        return not caminho.is_symlink() or caminho.resolve().is_relative_to(Path.home())
-    return str(caminho) in APAGAVEIS_FORA_DE_CASA
+    bruto = str(caminho)
+    # caminho normalizado e sem "..": a lista fica numa pasta do usuario
+    if not diario.caminho_limpo(bruto):
+        return False
+    casa = Path.home()
+    if caminho.is_relative_to(casa):
+        real = Path(os.path.realpath(caminho))
+        # nunca a casa inteira nem uma pasta logo abaixo dela (Documentos, .config...)
+        return real.is_relative_to(casa) and len(real.relative_to(casa).parts) >= 2
+    return bruto in APAGAVEIS_FORA_DE_CASA
 
 
 def _apagar(caminho: Path, diz: Diz) -> None:
@@ -162,6 +174,9 @@ def _apagar(caminho: Path, diz: Diz) -> None:
 
 
 def _voltar_copia(caminho: Path, diz: Diz) -> None:
+    if not diario.caminho_limpo(str(caminho)):
+        diz(f"  atencao: caminho estranho no diario, ignorado: {caminho}")
+        return
     if not _da_pessoa(caminho):
         _voltar_copia_do_sistema(caminho, diz)
         return
@@ -182,15 +197,27 @@ def _voltar_copia(caminho: Path, diz: Diz) -> None:
 def _voltar_copia_do_sistema(caminho: Path, diz: Diz) -> None:
     """Arquivo do sistema volta so da copia do root (caminhos.BACKUP_SISTEMA):
     a da pasta da pessoa poderia ter sido trocada por qualquer programa dela."""
+    if str(caminho) not in RESTAURAVEIS_FORA_DE_CASA:
+        diz(f"  atencao: {caminho} nao e devolvido pelo root (fora da lista); confira a mao")
+        return
     copia = caminhos.BACKUP_SISTEMA / str(caminho).lstrip("/")
     if _rodar(["sudo", "-n", "test", "-e", str(copia)], diz) != 0:
         diz(f"  atencao: sem copia de seguranca (do root) de {caminho}; fica como esta")
         return
-    _rodar(["sudo", "-n", "rm", "-rf", str(caminho)], diz)
-    if _rodar(["sudo", "-n", "cp", "-a", str(copia), str(caminho)], diz) != 0:
+    if _rodar(["sudo", "-n", "sh", "-c", DEVOLVER_ROOT, "sh", str(caminhos.BACKUP_SISTEMA),
+               str(copia), str(caminho)], diz) != 0:
         diz(f"  nao consegui devolver {caminho}")
         return
     diz(f"  devolvido {caminho}")
+
+
+# a pasta das copias e do root e nao e link; a copia, resolvida (realpath -e),
+# fica dentro dela; so entao o destino e trocado pela copia
+DEVOLVER_ROOT = (
+    '[ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c %u "$1")" = 0 ] || exit 3; '
+    'raiz=$(realpath -e -- "$1") && c=$(realpath -e -- "$2") || exit 3; '
+    'case "$c" in "$raiz"/*) ;; *) exit 4;; esac; '
+    'rm -rf -- "$3" && cp -a -- "$c" "$3"')
 
 
 def tirar_bloco(arquivo: Path, marca: str, comentario: str) -> bool:
@@ -259,6 +286,9 @@ def _diario(diz: Diz) -> int:
     for item in reversed(itens):
         try:
             tipo = item.get("tipo")
+            if "caminho" in item and not diario.caminho_limpo(item["caminho"]):
+                diz(f"  atencao: caminho estranho no diario, ignorado: {item['caminho']}")
+                continue
             if tipo == "criado" and caminhos.DADOS_DIR in Path(item["caminho"]).parents:
                 guardados += 1
             elif tipo == "criado":
