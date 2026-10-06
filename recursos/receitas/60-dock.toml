@@ -10,7 +10,9 @@ se = "dock != sim"
 dizer = "desligando o dock"
 tolera_falha = true
 corpo = '''
+d3_processo plank
 pkill -x plank 2>/dev/null || true
+if [ -e "$HOME/.config/autostart/plank.desktop" ]; then d3_antes "$HOME/.config/autostart/plank.desktop"; fi
 rm -f "$HOME/.config/autostart/plank.desktop"
 echo "dock desligado; o pacote continua instalado, religar e imediato"
 '''
@@ -20,6 +22,9 @@ tipo = "script"
 se = "dock == sim"
 dizer = "instalando e configurando o dock"
 corpo = '''
+# o xfwm4 tira a sombra de janelas do tipo dock quando o plank aparece; anotado
+# para o desfazer devolver
+d3_xfconf xfwm4 /general/show_dock_shadow bool
 # O plank-reloaded instala o executavel como /usr/bin/plank e declara conflito
 # com o pacote plank. Detectar pelo binario faria o instalador trocar o fork
 # pelo original. Por isso a deteccao e sempre pelo nome do pacote.
@@ -35,12 +40,15 @@ else
     deb="$D3_FONTES/$(basename "$url")"
     [ -s "$deb" ] || curl -fsSL -o "$deb" "$url" || true
     if [ -s "$deb" ] && sudo -n apt-get install -y "$deb" >/dev/null 2>&1; then
-      instalado plank-reloaded && pacote=plank-reloaded
+      instalado plank-reloaded && pacote=plank-reloaded && d3_pacotes plank-reloaded
     fi
   fi
   if [ -z "$pacote" ]; then
     echo "plank-reloaded indisponivel, usando o plank do Debian"
-    sudo -n apt-get install -y plank >/dev/null 2>&1 || true
+    if ! instalado plank; then
+      sudo -n apt-get install -y plank >/dev/null 2>&1 || true
+      if instalado plank; then d3_pacotes plank; fi
+    fi
     instalado plank && pacote=plank
   fi
 fi
@@ -48,8 +56,10 @@ fi
 echo "dock: $pacote"
 
 cfg="$HOME/.config/plank/dock1"
+d3_antes "$HOME/.config/plank"
 mkdir -p "$cfg"
 for tema in "$HOME/.local/share/plank/themes" "$HOME/.local/share/plank-reloaded/themes"; do
+  d3_antes "$tema/WhiteSur"
   mkdir -p "$tema/WhiteSur"
   cp -f "$D3_ARQUIVOS/plank-dock.theme" "$tema/WhiteSur/dock.theme"
 done

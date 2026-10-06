@@ -14,7 +14,16 @@ destino = "@@fontes@@/rofi-temas"
 tipo = "script"
 dizer = "instalando os temas do lancador"
 corpo = '''
+# antes de anotar as fontes la dentro: o desfazer anda de tras para frente
+d3_pasta "$HOME/.local/share/fonts" "$HOME/.local/bin"
 origem="$D3_FONTES/rofi-temas"
+d3_antes "$HOME/.config/rofi" "$HOME/.local/bin/d3bian-lancador"
+if [ -d "$origem/fonts" ]; then
+  find "$origem/fonts" -type f -print0 | while IFS= read -r -d '' f; do
+    alvo="$HOME/.local/share/fonts/${f#"$origem/fonts/"}"
+    if [ ! -e "$alvo" ]; then d3_antes "$alvo"; fi
+  done
+fi
 mkdir -p "$HOME/.config/rofi" "$HOME/.local/share/fonts" "$HOME/.local/bin"
 if [ -d "$origem/files" ]; then
   cp -rf "$origem/files/." "$HOME/.config/rofi/"

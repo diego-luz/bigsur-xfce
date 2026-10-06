@@ -10,6 +10,11 @@ se = "menu_global != sim"
 dizer = "desligando o menu global"
 tolera_falha = true
 corpo = '''
+d3_xfconf xsettings /Gtk/ShellShowsMenubar bool
+d3_xfconf xsettings /Gtk/ShellShowsAppmenu bool
+for f in "$HOME/.config/environment.d/50-appmenu.conf" "$HOME/.config/xfce4/appmenu.sh" "$HOME/.xprofile"; do
+  if [ -e "$f" ]; then d3_antes "$f"; fi
+done
 xfconf-query -c xsettings -p /Gtk/ShellShowsMenubar -s false 2>/dev/null || true
 xfconf-query -c xsettings -p /Gtk/ShellShowsAppmenu -s false 2>/dev/null || true
 rm -f "$HOME/.config/environment.d/50-appmenu.conf" "$HOME/.config/xfce4/appmenu.sh"
@@ -51,6 +56,7 @@ se = "menu_global == sim"
 dizer = "carregando o modulo GTK no inicio da sessao"
 corpo = '''
 chmod +x "$HOME/.config/xfce4/appmenu.sh"
+d3_antes "$HOME/.config/environment.d/50-appmenu.conf" "$HOME/.xprofile"
 mkdir -p "$HOME/.config/environment.d"
 printf 'GTK_MODULES=appmenu-gtk-module\nUBUNTU_MENUPROXY=1\n' \
   > "$HOME/.config/environment.d/50-appmenu.conf"

@@ -167,12 +167,39 @@
   </div>
 </div>
 
+<!-- desfaz pelo desfazer.py; so aparece quando alguma etapa ja rodou -->
+<div class="cartao" style="margin-top:20px" id="cartaoDesfazer" hidden>
+  <h2>Voltar ao que era antes</h2>
+  <p style="margin:0;color:var(--fraco);font-size:13px">
+    Não gostou? Isto desfaz o que as etapas mudaram: temas, ícones e arquivos criados saem, arquivos que
+    já existiam voltam da cópia de segurança e configurações voltam ao valor de antes. Os pacotes
+    instalados ficam, a não ser que você marque a opção abaixo. O visual antigo aparece por completo depois de encerrar a sessão; a tela de login, depois de reiniciar o LightDM.
+  </p>
+  <label class="opcao-apagar">
+    <input type="checkbox" id="apagarInstalado">
+    <span><b>Remover também o que foi instalado</b>
+      <span class="dica">Desinstala com o apt os pacotes que o projeto instalou e apaga as opções, o log,
+      as cópias de segurança e os downloads do projeto. O que já existia na máquina fica.</span></span>
+  </label>
+  <div class="aviso erro" id="listaApagar" hidden></div>
+  <div class="aviso erro" id="confirmaDesfazer" hidden role="alert">
+    <b id="confirmaTitulo">Voltar ao que era antes?</b>
+    <div class="acoes" style="margin-top:10px">
+      <button class="bt pri" id="btDesfazerSim">Sim, voltar</button>
+      <button class="bt sec" id="btDesfazerNao">Cancelar</button>
+    </div>
+  </div>
+  <div class="acoes">
+    <button class="bt sec" id="btDesfazer">Voltar ao que era antes</button>
+  </div>
+</div>
+
 <script>
 const $ = s => document.querySelector(s);
 let estado = {}, salvo = {}, opcoes = [], receitas = [], instalado = true, previa = "escuro-com-widget";
 let retomou = false;
 const BOTOES = ["#btAplicar", "#btAplicarLogin", "#btCapturar", "#btCapturarTodas",
-                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever"];
+                "#btLogin", "#btReiniciarLogin", "#btInstalar", "#btRever", "#btDesfazer", "#btDesfazerSim"];
 const APLICAR = ["#btAplicar", "#btAplicarLogin"];
 // imagens de exemplo por opcao, do pacote: {chave: {valor: arquivo}}
 let EXEMPLOS = null;
@@ -253,6 +280,7 @@ const rotulo = (v, chave) =>
   (NOMES_POR_CHAVE[chave] || {})[v] || NOMES[v] || v[0].toUpperCase() + v.slice(1);
 
 let papeis = [];
+let baixados = true;
 
 function desenharGaleria(){
   galeria("#galeria", "#papeis", "papel_de_parede",
@@ -263,9 +291,9 @@ function desenharGaleria(){
 
 function galeria(moldura, seletor, chave, especiais){
   const caixa = $(seletor);
-  // As imagens so existem depois que a receita 33 baixa o repositorio. Antes
-  // disso a galeria continua visivel, com as escolhas que nao dependem delas e
-  // um aviso, senao a opcao some sem explicacao na primeira execucao
+  // As imagens so chegam com a receita 33. Antes disso a galeria mostra as
+  // miniaturas que vem no pacote; a escolha fica guardada pelo nome e a
+  // aparencia aplica o arquivo baixado com esse nome
   $(moldura).hidden = false;
   caixa.textContent = "";
 
@@ -278,14 +306,18 @@ function galeria(moldura, seletor, chave, especiais){
     caixa.appendChild(b);
   });
 
-  if (!papeis.length){
+  if (!papeis.length || !baixados){
     const aviso = document.createElement("p");
     aviso.className = "dica";
     aviso.style.gridColumn = "1 / -1";
     aviso.style.margin = "4px 2px 0";
-    aviso.textContent = instalado
-      ? "Nenhum papel de parede encontrado. Reaplique a etapa de papéis de parede para baixá-los."
-      : "As imagens para escolher aparecem aqui depois da instalação. Até lá, o tema escolhe um combinando.";
+    aviso.textContent = !papeis.length
+      ? (instalado
+        ? "Nenhum papel de parede encontrado. Reaplique a etapa de papéis de parede para baixá-los."
+        : "As imagens para escolher aparecem aqui depois da instalação. Até lá, o tema escolhe um combinando.")
+      : instalado
+        ? "As imagens ainda não estão na máquina. Reaplique a etapa de papéis de parede para baixá-las; a escolha fica guardada."
+        : "As imagens são baixadas durante a instalação, e a que você escolher aqui já entra no fim.";
     caixa.appendChild(aviso);
   }
 
@@ -446,6 +478,7 @@ function etapasDoRotulo(rotulo){
 function tituloDoRotulo(rotulo){
   const r = rotulo || "";
   if (/^Instalacao/.test(r)) return "Instalação completa";
+  if (/^Desfazendo/.test(r)) return "Voltando ao que era antes";
   if (/^Reaplicando/.test(r)) return "Reaplicando a aparência";
   if (/^Aplicando/.test(r)) return "Aplicando a aparência";
   if (/^Capturando/.test(r)) return "Capturando a tela";
@@ -500,12 +533,13 @@ async function carregar(){
   desenharEtapas();
   try {
     const p = await fetch("/api/papeis").then(r => r.json());
-    papeis = p.papeis || []; doTema = p.doTema || {};
+    papeis = p.papeis || []; doTema = p.doTema || {}; baixados = p.baixados !== false;
   } catch (e) { papeis = []; }
   desenharGaleria();
   desenharEsquema();
 
   $("#cartaoInstalar").hidden = instalado;
+  $("#cartaoDesfazer").hidden = !receitas.some(r => r.aplicada);
   APLICAR.forEach(sel => {
     ROTULOS[sel] = instalado ? "Aplicar" : "Aplicar (instale primeiro)";
   });
@@ -523,6 +557,7 @@ async function carregar(){
         await carregar();
         if (/^Instalacao/.test(rotuloRetomado)) return fimInstalar(codigo);
         if (/aplicando/i.test(rotuloRetomado)) return fimAplicar(/^Re/.test(rotuloRetomado), codigo);
+        if (/^Desfazendo/.test(rotuloRetomado)) return fimDesfazer(codigo);
         return null;
       },
     });
@@ -594,6 +629,75 @@ $("#btInstalar").addEventListener("click", async () => {
     etapas: etapasDe(receitas.map(x => x.id)),
     dica: "Leva de 15 a 25 minutos; a compilação do tema é a parte lenta. Deixe esta página aberta.",
     aoTerminar: async codigo => { await carregar(); return fimInstalar(codigo); },
+  });
+});
+
+// ---- voltar ao que era antes ----------------------------------------------
+
+function fimDesfazer(codigo){
+  if (codigo === 0) return {bom: true, titulo: "Máquina como era antes",
+    texto: "Encerre a sessão e entre de novo para tudo voltar ao visual de antes."};
+  if (codigo !== null) return {bom: false, titulo: "Voltou só em parte",
+    texto: `${codigo} problema(s). As linhas vermelhas do log mostram o que não deu.`};
+  return null;
+}
+
+// com a caixa marcada, a lista exata do que sai, antes de confirmar
+async function desenharPreviaApagar(){
+  const caixa = $("#listaApagar");
+  const apagar = $("#apagarInstalado").checked;
+  $("#confirmaTitulo").textContent = apagar
+    ? "Voltar ao que era antes e apagar o que foi instalado?" : "Voltar ao que era antes?";
+  $("#btDesfazerSim").textContent = apagar ? "Sim, voltar e apagar" : "Sim, voltar";
+  ROTULOS["#btDesfazerSim"] = $("#btDesfazerSim").textContent;
+  if (!apagar){ caixa.hidden = true; return; }
+  caixa.hidden = false;
+  caixa.textContent = "Conferindo o que o projeto instalou…";
+  let p;
+  try { p = await fetch("/api/desfazer/previa").then(r => r.json()); }
+  catch (e) { caixa.textContent = "Não consegui conferir o que seria apagado."; return; }
+  caixa.textContent = "";
+  const criarEl = (tag, texto) => { const e = document.createElement(tag); e.textContent = texto; return e; };
+  const lista = (titulo, itens) => {
+    if (!itens.length) return;
+    caixa.appendChild(criarEl("b", titulo));
+    const ul = document.createElement("ul");
+    itens.forEach(i => ul.appendChild(criarEl("li", i)));
+    caixa.appendChild(ul);
+  };
+  const sai = [];
+  if (p.pacotes.length) sai.push("Pacotes desinstalados com apt: " + p.pacotes.join(", "));
+  p.pastas_do_projeto.forEach(a => sai.push("Apagado: " + a + " (opções, log, cópias e downloads)"));
+  if (sai.length) lista("Será apagado", sai);
+  else caixa.appendChild(criarEl("b", "Nada instalado pelo projeto foi encontrado"));
+  lista("Fica instalado", p.ficam.map(f => `${f.nome}: ${f.motivo}`));
+  if (p.origem === "historico"){
+    const nota = criarEl("p", "Esta instalação é anterior ao diário de alterações; a lista de pacotes veio "
+      + "do histórico do apt, e só as cópias de segurança voltam.");
+    nota.className = "dica";
+    caixa.appendChild(nota);
+  }
+}
+$("#apagarInstalado").addEventListener("change", desenharPreviaApagar);
+
+$("#btDesfazer").addEventListener("click", () => {
+  $("#confirmaDesfazer").hidden = false;
+  $("#btDesfazerSim").focus();
+});
+$("#btDesfazerNao").addEventListener("click", () => { $("#confirmaDesfazer").hidden = true; });
+$("#btDesfazerSim").addEventListener("click", async () => {
+  $("#confirmaDesfazer").hidden = true;
+  travar(true, "#btDesfazer", "Voltando…");
+  const r = await pedir("/api/desfazer", {apagar: $("#apagarInstalado").checked});
+  if (!r.iniciado){
+    naoComecou(r.erro || (r.motivo === "ocupado"
+      ? "Já tem uma tarefa rodando. Espere terminar." : "Não consegui começar."));
+    return;
+  }
+  Terminal.acompanhar({
+    titulo: "Voltando ao que era antes",
+    etapas: r.etapas || [],
+    aoTerminar: async codigo => { await carregar(); return fimDesfazer(codigo); },
   });
 });
 
