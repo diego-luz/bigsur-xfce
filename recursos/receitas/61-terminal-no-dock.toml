@@ -63,7 +63,9 @@ for item in "$HOME"/.config/plank/*/launchers/*.dockitem "$HOME"/.config/plank/*
 done
 if [ "$mudou" = 1 ] && pgrep -x plank >/dev/null; then
   pkill -x plank
-  sleep 0.5
+  # o novo so sobe depois que o antigo saiu: antes disso ele nao consegue o
+  # nome no D-Bus e desiste, e o antigo morre logo em seguida (fica sem dock)
+  for _ in $(seq 50); do pgrep -x -u "$(id -u)" plank >/dev/null || break; sleep 0.1; done
   setsid plank >/dev/null 2>&1 < /dev/null &
 fi
 echo "dock usando o terminal com as acoes novas"
