@@ -6,6 +6,9 @@ londonali1010, reeditado por despot77 e Altin, e foi usado no setup Xfce Big
 Sur do lsteam. Mudancas: carrega o cairo_xlib do conky novo, libera a
 superficie a cada quadro, segue a cor de destaque e descobre a interface de
 rede pela rota padrao, em vez de eth0 e wlan0.
+
+Licenca: este arquivo, por derivar do Clock Rings, fica sob a GNU GPL versao 3
+(https://www.gnu.org/licenses/gpl-3.0.html), e nao sob a MIT do resto do projeto.
 ]]
 
 require 'cairo'
