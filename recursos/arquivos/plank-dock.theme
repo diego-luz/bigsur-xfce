@@ -8,9 +8,9 @@ FillEndColor=250;;250;;250;;150
 InnerStrokeColor=255;;255;;255;;40
 
 [PlankDockTheme]
-HorizPadding=6
-TopPadding=-8
-BottomPadding=4
+HorizPadding=3
+TopPadding=-10
+BottomPadding=3
 ItemPadding=3
 IndicatorSize=5
 IconShadowSize=1
