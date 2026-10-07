@@ -100,7 +100,7 @@ pessoas. Todo o mérito visual é delas.
 | Temas do lançador | [rofi](https://github.com/adi1090x/rofi) | adi1090x | GPL-3.0 |
 | Dock | [plank-reloaded](https://github.com/zquestz/plank-reloaded) | zquestz | GPL-3.0 |
 | Fonte Inter | pacote `fonts-inter` do Debian | Rasmus Andersson | OFL-1.1 |
-| Widget de anéis | [MX-CoreBlue](https://github.com/MX-Linux/mx-conky-data/tree/master/MX-CoreBlue), a partir do Clock Rings | MX Linux; londonali1010, despot77 e Altin | ver o repositório |
+| Widget de anéis | [MX-CoreBlue](https://github.com/MX-Linux/mx-conky-data/tree/master/MX-CoreBlue), a partir do Clock Rings | MX Linux; londonali1010, despot77 e Altin | GPL-3.0 (os arquivos `conky-aneis.lua` e `conky-aneis.conf` daqui também) |
 | Ideia do widget de anéis | [Xfce Big Sur setup](https://www.opencode.net/lsteam/xfce-big-sur-setup-file) | lsteam | |
 
 As miniaturas em `recursos/web/papeis` e as prévias da página mostram os papéis
@@ -119,5 +119,5 @@ NBCUniversal.
 ---
 
 <div align="center">
-<sub>Código sob a <a href="LICENSE">licença MIT</a> · feito para o Debian 13</sub>
+<sub>Código sob a <a href="LICENSE">licença MIT</a>, exceto o widget de anéis (GPL-3.0) · feito para o Debian 13</sub>
 </div>
