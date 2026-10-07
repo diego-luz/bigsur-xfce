@@ -11,7 +11,10 @@ dizer = "desligando o dock"
 tolera_falha = true
 corpo = '''
 d3_processo plank
+# o plank trata o TERM no laco principal: preso na subida, ele nao sai
 pkill -x plank 2>/dev/null || true
+for _ in $(seq 50); do pgrep -x -u "$(id -u)" plank >/dev/null || break; sleep 0.1; done
+pkill -KILL -x -u "$(id -u)" plank 2>/dev/null && sleep 0.5
 if [ -e "$HOME/.config/autostart/plank.desktop" ]; then d3_antes "$HOME/.config/autostart/plank.desktop"; fi
 rm -f "$HOME/.config/autostart/plank.desktop"
 echo "dock desligado; o pacote continua instalado, religar e imediato"
@@ -73,6 +76,20 @@ fi
 [ -n "$pacote" ] || { echo "nenhum dock disponivel"; exit 1; }
 echo "dock: $pacote"
 
+# O plank 0.11 (o do Debian e o Reloaded) le a configuracao do GSettings
+# (net.launchpad.plank.dock.settings, um caminho por dock) e os itens de
+# dock1/launchers; o antigo dock1/settings e os .dockitem soltos em dock1 sao
+# ignorados, e ele sobe com os lancadores padrao dele.
+# Parado antes de mexer: rodando, ele reescreve a lista de itens conforme a
+# pasta muda. Sobe de novo no fim deste passo.
+# O plank trata o TERM no laco principal, e um plank preso na subida nao sai
+# com ele: depois de 5 s vai o KILL. Senao o novo nao consegue o nome no
+# D-Bus, desiste, e fica o antigo, vivo e sem desenhar nada.
+d3_processo plank
+pkill -x plank 2>/dev/null || true
+for _ in $(seq 50); do pgrep -x -u "$(id -u)" plank >/dev/null || break; sleep 0.1; done
+pkill -KILL -x -u "$(id -u)" plank 2>/dev/null && sleep 0.5
+
 cfg="$HOME/.config/plank/dock1"
 d3_antes "$HOME/.config/plank"
 mkdir -p "$cfg"
@@ -82,13 +99,17 @@ for tema in "$HOME/.local/share/plank/themes" "$HOME/.local/share/plank-reloaded
   cp -f "$D3_ARQUIVOS/plank-dock.theme" "$tema/WhiteSur/dock.theme"
 done
 
+# a pasta inteira foi guardada acima: os lancadores de agora saem
+lanc="$cfg/launchers"
+rm -rf "$lanc"
+mkdir -p "$lanc"
 itens=""
 add(){
   for base in /usr/share/applications "$HOME/.local/share/applications"; do
     if [ -f "$base/$1" ]; then
       printf '[PlankDockItemPreferences]\nLauncher=file://%s/%s\n' "$base" "$1" \
-        > "$cfg/${1%.desktop}.dockitem"
-      itens="$itens${1%.desktop}.dockitem;;"
+        > "$lanc/${1%.desktop}.dockitem"
+      itens="$itens${itens:+, }'${1%.desktop}.dockitem'"
       return 0
     fi
   done
@@ -99,29 +120,41 @@ add thunar.desktop || true
 add xfce4-terminal.desktop || true
 add org.xfce.mousepad.desktop || add mousepad.desktop || true
 add xfce4-appfinder.desktop || true
-add xfce4-settings-manager.desktop || true
+add xfce-settings-manager.desktop || add xfce4-settings-manager.desktop || true
 
-cat > "$cfg/settings" <<CFGEOF
-[PlankDockPreferences]
-CurrentWorkspaceOnly=false
-IconSize=44
-HideMode=1
-UnhideDelay=0
-HideDelay=0
-Monitor=
-DockItems=$itens
-Position=3
-Offset=0
-Theme=WhiteSur
-Alignment=3
-ItemsAlignment=3
-LockItems=false
-PressureReveal=false
-ShowDockItem=false
-ZoomEnabled=true
-ZoomPercent=145
-CFGEOF
-echo "dock configurado"
+command -v gsettings >/dev/null || echo "gsettings ausente (libglib2.0-bin): o dock sobe com o tamanho e o tema padrao"
+esq="net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/"
+pref(){
+  command -v gsettings >/dev/null || return 0
+  d3_gsettings "$esq" "$1"
+  gsettings set "$esq" "$1" "$2" 2>/dev/null || echo "  o plank desta versao nao tem a chave $1"
+}
+pref dock-items "[$itens]"
+pref position bottom
+pref alignment center
+pref items-alignment center
+pref offset 0
+pref icon-size 44
+pref hide-mode intelligent
+pref hide-delay 0
+pref unhide-delay 0
+pref pressure-reveal false
+pref monitor "''"
+pref current-workspace-only false
+pref lock-items false
+pref show-dock-item false
+pref theme WhiteSur
+pref zoom-enabled true
+pref zoom-percent 145
+setsid plank >/dev/null 2>&1 < /dev/null &
+# so termina com ele de pe (dono do nome no D-Bus): a receita 61 pode
+# reinicia-lo logo em seguida, e matar o plank no meio da subida o deixa preso
+for _ in $(seq 100); do
+  gdbus call --session --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
+    --method org.freedesktop.DBus.NameHasOwner net.launchpad.plank 2>/dev/null | grep -q true && break
+  sleep 0.1
+done
+echo "dock configurado: $(echo "$itens" | tr -d "'")"
 '''
 
 [[passo]]
@@ -130,9 +163,3 @@ se = "dock == sim"
 id = "plank"
 nome = "Dock"
 comando = "plank"
-
-[[passo]]
-tipo = "processo"
-se = "dock == sim"
-nome = "plank"
-acao = "reiniciar"

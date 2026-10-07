@@ -114,12 +114,34 @@ def antes_do_gsettings(esquema: str, chave: str, receita: str = "") -> None:
     codigo, valor = _saida(["gsettings", "get", esquema, chave])
     if codigo != 0:
         return
-    # o gsettings get devolve o padrao quando a chave nunca foi gravada, e nao ha
-    # como diferenciar por ele; quem sabe e o dconf, no caminho do esquema
-    caminho = "/" + esquema.replace(".", "/") + "/" + chave
-    _, gravado = _saida(["dconf", "read", caminho]) if shutil.which("dconf") else (1, "?")
     anotar("gsettings", receita=receita, esquema=esquema, chave=chave, valor=valor.strip(),
-           padrao=gravado.strip() == "")
+           padrao=not _gravado(esquema, chave))
+
+
+def _gravado(esquema: str, chave: str) -> bool:
+    """A chave tem valor gravado pela pessoa (e nao o padrao do esquema)?
+
+    O gsettings get devolve o padrao quando a chave nunca foi gravada, e nao ha
+    como diferenciar por ele; quem sabe e o dconf, no caminho do esquema. Esquema
+    relocavel vem como ESQUEMA:/CAMINHO/ (o do plank, um por dock). Sem o
+    dconf-cli, pergunta ao proprio GSettings pelo python3-gi; sem os dois, conta
+    como gravado (o desfazer grava o valor de antes, em vez de zerar).
+    """
+    nome, _, base = esquema.partition(":")
+    caminho = (base.rstrip("/") if base else "/" + nome.replace(".", "/")) + "/" + chave
+    if shutil.which("dconf"):
+        return _saida(["dconf", "read", caminho])[1].strip() != ""
+    programa = ("import sys\n"
+                "from gi.repository import Gio\n"
+                "n, b, k = sys.argv[1:4]\n"
+                "s = Gio.Settings.new_with_path(n, b) if b else Gio.Settings.new(n)\n"
+                "sys.exit(10 if s.get_user_value(k) is None else 11)\n")
+    try:
+        r = subprocess.run([sys.executable, "-c", programa, nome, base, chave],
+                           capture_output=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return True
+    return r.returncode != 10
 
 
 def antes_do_dconf(chave: str, receita: str = "") -> None:
