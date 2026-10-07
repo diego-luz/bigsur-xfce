@@ -411,7 +411,10 @@ def previa_remocao() -> dict:
             continue
         pacotes.append(nome)
     # o que depende de um pacote so segura ele se nao sair junto; repete porque
-    # um pacote que fica pode segurar outro
+    # um pacote que fica pode segurar outro. Dependencia que o apt trouxe com os
+    # pacotes do projeto tambem sai junto (o libglib2.0-bin e pedido pelo
+    # projeto e pelo appmenu-gtk-module-common, que veio com o appmenu)
+    trazidas = {d.split(":")[0] for e in itens if e.get("tipo") == "pacotes" for d in e.get("dependencias", [])}
     mudou = True
     while mudou:
         mudou = False
@@ -419,7 +422,7 @@ def previa_remocao() -> dict:
             simulado = subprocess.run(["apt-get", "-s", "remove", nome], capture_output=True, text=True,
                                       env={**os.environ, "LC_ALL": "C"}).stdout
             levaria = [x for x in re.findall(r"^Remv (\S+)", simulado, re.M)
-                       if x != nome and x.split(":")[0] not in pacotes]
+                       if x != nome and x.split(":")[0] not in pacotes and x.split(":")[0] not in trazidas]
             if levaria:
                 pacotes.remove(nome)
                 ficam.append({"nome": nome, "motivo": "outros programas dependem dele: " + ", ".join(levaria[:6])
