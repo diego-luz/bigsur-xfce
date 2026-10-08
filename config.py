@@ -55,7 +55,8 @@ OPCOES: tuple[Opcao, ...] = (
     Opcao("menu_global", "sim", SIM_NAO,
           "Barra de menus no topo", "Menu do programa ativo, como no macOS"),
     Opcao("dock", "sim", SIM_NAO,
-          "Dock inferior", "Barra de atalhos com zoom"),
+          "Dock inferior", "Barra de atalhos com zoom. Botao do meio (ou Ctrl + clique) abre outra janela "
+          "do programa; no terminal, clique direito tem Nova janela e Nova aba"),
     # "sim" e o widget simples e continua com esse nome para nao invalidar
     # configuracoes ja salvas; "aneis" e o do setup Xfce Big Sur do lsteam
     Opcao("widget", "sim", ("sim", "aneis", "nao"),
@@ -64,7 +65,8 @@ OPCOES: tuple[Opcao, ...] = (
     Opcao("efeitos", "sim", SIM_NAO,
           "Sombras e cantos arredondados", "Pesa um pouco no processador de video"),
     Opcao("janelas", "sim", SIM_NAO,
-          "Encaixe de janelas", "Bordas mais largas, atalhos e layouts no Super+Z"),
+          "Encaixe de janelas", "Bordas mais largas, atalhos e layouts no Super+Z. "
+          "Alt + arrastar move a janela e Alt + botao direito arrastado redimensiona"),
     Opcao("titulo_no_painel", "nao", SIM_NAO,
           "Titulo da janela no painel", "Janela maximizada mostra titulo e botoes na barra"),
     # numa maquina recem instalada nao ha papel de parede a preservar, entao o
