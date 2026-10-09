@@ -8,7 +8,7 @@ Clone com o nome da pasta igual ao do pacote Python (com `_`) e rode como módul
 a partir da pasta que contém `d3bian_init_bigsur_xfce`:
 
 ```sh
-git clone https://git.saberdl.dev.br/d3bian-temas/bigsur-xfce.git d3bian_init_bigsur_xfce
+git clone https://github.com/diego-luz/bigsur-xfce.git d3bian_init_bigsur_xfce
 python3 -m d3bian_init_bigsur_xfce          # abre o painel no navegador
 python3 -m d3bian_init_bigsur_xfce --help   # subcomandos para o terminal
 ```
@@ -64,4 +64,4 @@ XFCE, a tela de login do GDM) fica em `[[desfazer]]` na própria receita.
 Com **Remover também o que foi instalado** (`restaurar --sim --apagar`), sai
 também o que o projeto instalou pelo apt e as pastas do projeto; a página mostra
 a lista antes. Instalações anteriores ao diário: só as cópias de segurança voltam.
-Detalhes no `LEIAME.md` do [modelo](https://git.saberdl.dev.br/d3bian-temas/modelo).
+Detalhes no `LEIAME.md` do modelo.
