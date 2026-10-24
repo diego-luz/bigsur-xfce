@@ -26,6 +26,31 @@ python3 -m d3bian_init_bigsur_xfce        # pede a senha uma vez e abre o painel
   <br><sub>Logo depois de instalar, com as opções padrão.</sub>
 </div>
 
+<details>
+<summary><b>In English</b></summary>
+
+A local control panel, opened in your browser, that gives Xfce on Debian the
+**macOS Big Sur look**: WhiteSur theme, icons, cursors and wallpapers (GTK and
+Qt/Kvantum), a top bar with a global menu, a zooming dock (Plank Reloaded), a
+Spotlight-style launcher (rofi), a desktop widget, rounded windows with shadows,
+window snapping and layouts, and a matching login and lock screen.
+
+- **Packages from the official Debian repository**; WhiteSur, which Debian does not
+  package, comes from its upstream Git repositories at a fixed commit, and Plank
+  Reloaded from its official release with the SHA-256 checked.
+- **Safe to try**: every change is backed up and journaled; *Restore* puts your
+  desktop back the way it was.
+- **Python standard library only**: no pip, nothing to build.
+
+```sh
+git clone https://github.com/diego-luz/bigsur-xfce.git d3bian_init_bigsur_xfce
+python3 -m d3bian_init_bigsur_xfce        # asks for your password once, opens the panel
+```
+
+The interface and the documentation are in Brazilian Portuguese.
+
+</details>
+
 ---
 
 ## O que ele faz
