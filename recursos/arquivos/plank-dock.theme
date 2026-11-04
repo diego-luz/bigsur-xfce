@@ -10,7 +10,7 @@ InnerStrokeColor=255;;255;;255;;40
 [PlankDockTheme]
 HorizPadding=3
 TopPadding=-10
-BottomPadding=3
+BottomPadding=1
 ItemPadding=3
 IndicatorSize=5
 IconShadowSize=1
